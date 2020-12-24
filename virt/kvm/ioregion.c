@@ -260,17 +260,8 @@ kvm_ioregion_collides(struct kvm *kvm, int bus_idx,
 static bool
 ioregion_collision(struct kvm *kvm, struct ioregion *p, enum kvm_bus bus_idx)
 {
-	struct ioregion *_p;
-	struct list_head *ioregions;
-
-	ioregions = get_ioregion_list(kvm, bus_idx);
-	list_for_each_entry(_p, ioregions, list)
-		if (_p->rf == p->rf &&
-		    _p->wf == p->wf &&
-		    overlap(p->paddr, p->size, _p->paddr, _p->size))
-			return true;
-
-	if (kvm_eventfd_collides(kvm, bus_idx, p->paddr, p->size))
+	if (kvm_ioregion_collides(kvm, bus_idx, p->paddr, p->size) ||
+	    kvm_eventfd_collides(kvm, bus_idx, p->paddr, p->size))
 		return true;
 
 	return false;
