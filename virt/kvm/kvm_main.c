@@ -747,6 +747,7 @@ static struct kvm *kvm_create_vm(unsigned long type)
 	mmgrab(current->mm);
 	kvm->mm = current->mm;
 	kvm_eventfd_init(kvm);
+	kvm_ioregionfd_init(kvm);
 	mutex_init(&kvm->lock);
 	mutex_init(&kvm->irq_lock);
 	mutex_init(&kvm->slots_lock);
@@ -3706,6 +3707,16 @@ static long kvm_vm_ioctl(struct file *filp,
 			goto out;
 
 		r = kvm_vm_ioctl_set_memory_region(kvm, &kvm_userspace_mem);
+		break;
+	}
+	case KVM_SET_IOREGION: {
+		struct kvm_ioregion data;
+
+		r = -EFAULT;
+		if (copy_from_user(&data, argp, sizeof(data)))
+			goto out;
+
+		r = kvm_ioregionfd(kvm, &data);
 		break;
 	}
 	case KVM_GET_DIRTY_LOG: {

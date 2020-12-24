@@ -27,6 +27,7 @@
 #include <trace/events/kvm.h>
 
 #include <kvm/iodev.h>
+#include "ioregion.h"
 
 #ifdef CONFIG_HAVE_KVM_IRQFD
 
@@ -755,6 +756,24 @@ static const struct kvm_io_device_ops ioeventfd_ops = {
 	.destructor = ioeventfd_destructor,
 };
 
+#ifdef CONFIG_KVM_IOREGION
+/* assumes kvm->slots_lock held */
+bool
+kvm_eventfd_collides(struct kvm *kvm, int bus_idx,
+		     u64 start, u64 size)
+{
+	struct _ioeventfd *_p;
+
+	list_for_each_entry(_p, &kvm->ioeventfds, list)
+		if (_p->bus_idx == bus_idx &&
+		    overlap(start, size, _p->addr,
+			    !_p->length ? 8 : _p->length))
+			return true;
+
+	return false;
+}
+#endif
+
 /* assumes kvm->slots_lock held */
 static bool
 ioeventfd_check_collision(struct kvm *kvm, struct _ioeventfd *p)
@@ -769,6 +788,12 @@ ioeventfd_check_collision(struct kvm *kvm, struct _ioeventfd *p)
 		      (_p->wildcard || p->wildcard ||
 		       _p->datamatch == p->datamatch))))
 			return true;
+
+#ifdef CONFIG_KVM_IOREGION
+	if (p->bus_idx == KVM_MMIO_BUS || p->bus_idx == KVM_PIO_BUS)
+		if (kvm_ioregion_collides(kvm, p->bus_idx, p->addr, p->length))
+			return true;
+#endif
 
 	return false;
 }

@@ -17,6 +17,9 @@ config HAVE_KVM_EVENTFD
        bool
        select EVENTFD
 
+config KVM_IOREGION
+       bool
+
 config KVM_MMIO
        bool
 

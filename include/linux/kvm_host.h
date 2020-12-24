@@ -171,6 +171,9 @@ struct kvm_io_range {
 struct kvm_io_bus {
 	int dev_count;
 	int ioeventfd_count;
+#ifdef CONFIG_KVM_IOREGION
+	int ioregionfd_count;
+#endif
 	struct kvm_io_range range[];
 };
 
@@ -470,6 +473,10 @@ struct kvm {
 		struct mutex      resampler_lock;
 	} irqfds;
 	struct list_head ioeventfds;
+#endif
+#ifdef CONFIG_KVM_IOREGION
+	struct list_head ioregions_mmio;
+	struct list_head ioregions_pio;
 #endif
 	struct kvm_vm_stat stat;
 	struct kvm_arch arch;
@@ -1261,6 +1268,19 @@ static inline int kvm_ioeventfd(struct kvm *kvm, struct kvm_ioeventfd *args)
 }
 
 #endif /* CONFIG_HAVE_KVM_EVENTFD */
+
+#ifdef CONFIG_KVM_IOREGION
+void kvm_ioregionfd_init(struct kvm *kvm);
+int kvm_ioregionfd(struct kvm *kvm, struct kvm_ioregion *args);
+
+#else
+
+static inline void kvm_ioregionfd_init(struct kvm *kvm) {}
+static inline int kvm_ioregionfd(struct kvm *kvm, struct kvm_ioregion *args)
+{
+	return -ENOSYS;
+}
+#endif
 
 void kvm_arch_irq_routing_update(struct kvm *kvm);
 
