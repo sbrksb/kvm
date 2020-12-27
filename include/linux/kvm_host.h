@@ -171,9 +171,6 @@ struct kvm_io_range {
 struct kvm_io_bus {
 	int dev_count;
 	int ioeventfd_count;
-#ifdef CONFIG_KVM_IOREGION
-	int ioregionfd_count;
-#endif
 	struct kvm_io_range range[];
 };
 
